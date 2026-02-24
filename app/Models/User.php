@@ -21,6 +21,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_admin',
+        'reputation',
+        'is_banned',
+        'banned_at',
     ];
 
     /**
@@ -43,6 +47,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'reputation'=> 'integer',
+            'is_banned' => 'boolean',
+            'banned_at' => 'datetime',
         ];
     }
 }
