@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('email');
             $table->string('token');
-            $table->enum('status', ['pending', 'accepted', 'decline']);
+            $table->enum('status', ['pending', 'accepted', 'declined']);
             $table->timestamps();
-            $table->foriegnId('invited_by')->constrained('users')->onDelete('cascade');
+            $table->foreignId('coloc_id')->constrained('colocations')->onDelete('cascade');
+            
         });
     }
 
