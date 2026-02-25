@@ -20,11 +20,14 @@ class Colocation extends Model
     public function memberships(){
         return $this->hasMany(Membership::class, 'coloc_id');
     }
+    
+    public function invitations(){
+        return $this->hasMany(Invitation::class, 'coloc_id');
+    }
 
-    public function activeMemberships()
-    {
+    public function activeMemberships(){
         return $this->memberships()->whereNull('left_at');
     }
 
-    
+
 }

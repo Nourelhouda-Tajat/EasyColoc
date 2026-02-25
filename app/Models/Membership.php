@@ -29,7 +29,7 @@ class Membership extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function coloc(){
+    public function colocation(){
         return $this->belongsTo(Colocation::class, 'coloc_id');
     }
 }
