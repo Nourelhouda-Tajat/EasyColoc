@@ -53,4 +53,19 @@ class User extends Authenticatable
             'banned_at' => 'datetime',
         ];
     }
+    public function ownedColocations(){
+        return $this->hasMany(Colocation::class, 'owner_id');
+    }
+    public function memberships(){
+        return $this->hasMany(Membership::class);
+    }
+    public function hasActiveColocation()
+    {
+        return $this->memberships()
+                    ->whereNull('left_at')
+                    ->whereHas('colocation', function ($query) {
+                        $query->where('status', 'active');
+                    })
+                    ->exists();
+    }
 }
