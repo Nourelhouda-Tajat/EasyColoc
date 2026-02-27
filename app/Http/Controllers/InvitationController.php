@@ -55,10 +55,10 @@ class InvitationController extends Controller
         
         Invitation::create([
             'email' => $validated['email'],
-            'token' => $token,
+            'token' => Str::uuid()->toString(),
             'status' => 'pending',
             'coloc_id' => $colocation->id,
-            'expires_at' => Carbon::now()->addDays(7),
+            // 'expires_at' => Carbon::now()->addDays(7),
         ]);
 
 

@@ -11,14 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invitation', function (Blueprint $table) {
+        Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('email');
-            $table->string('token')->unique();
-            $table->enum('status', ['pending', 'accepted', 'declined']);
+            $table->string('name');        
             $table->timestamps();
-            $table->foreignId('coloc_id')->constrained('colocations')->onDelete('cascade');
-            
         });
     }
 
@@ -27,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('invitation');
+        Schema::dropIfExists('categories');
     }
 };

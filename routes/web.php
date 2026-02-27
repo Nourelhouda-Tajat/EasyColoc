@@ -1,15 +1,16 @@
 <?php
 use App\Http\Controllers\ColocationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvitationControlle;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified', 'check.banned'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'check.banned'])->name('dashboard');
 
 Route::middleware(['auth', 'check.banned'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -20,13 +21,5 @@ Route::middleware(['auth', 'check.banned'])->group(function () {
         ->name('colocations.invite.send');
 
 });
-Route::get('/invitations/{token}', [InvitationController::class, 'show'])
-    ->name('invitations.show');
 
-Route::middleware(['auth', 'check.banned'])->group(function () {
-    Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept'])
-        ->name('invitations.accept');
-    Route::post('/invitations/{token}/decline', [InvitationController::class, 'decline'])
-        ->name('invitations.decline');
-});
 require __DIR__.'/auth.php';
