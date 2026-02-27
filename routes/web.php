@@ -16,7 +16,17 @@ Route::middleware(['auth', 'check.banned'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('/colocations', ColocationController::class);
+    Route::post('/colocations/{colocation}/invite', [InvitationController::class, 'send'])
+        ->name('colocations.invite.send');
 
 });
+Route::get('/invitations/{token}', [InvitationController::class, 'show'])
+    ->name('invitations.show');
 
+Route::middleware(['auth', 'check.banned'])->group(function () {
+    Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept'])
+        ->name('invitations.accept');
+    Route::post('/invitations/{token}/decline', [InvitationController::class, 'decline'])
+        ->name('invitations.decline');
+});
 require __DIR__.'/auth.php';

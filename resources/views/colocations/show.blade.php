@@ -20,8 +20,8 @@
                     <div>
                         <p class="text-sm text-gray-500">Statut</p>
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                            {{ $colocation->isActive() ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                            {{ $colocation->isActive() ? 'Active' : 'Inactive' }}
+                            {{ $colocation->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                            {{ $colocation->status === 'active' ? 'Active' : 'Inactive' }}
                         </span>
                     </div>
                 </div>
@@ -29,18 +29,18 @@
 
             <!-- Membres -->
             <div class="bg-white shadow sm:rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Membres ({{ $colocation->activeMembers->count() }})</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-4"> Membres ({{ $activeMembers->count() }}) </h3>
                 
                 <ul class="divide-y divide-gray-200">
-                    @foreach($colocation->activeMembers as $membership)
+                    @foreach($activeMembers as $membership)
                         <li class="py-3 flex items-center justify-between">
                             <div>
                                 <p class="font-medium text-gray-900">{{ $membership->user->name }}</p>
                                 <p class="text-sm text-gray-500">{{ $membership->user->email }}</p>
                             </div>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                {{ $membership->isOwner() ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
-                                {{ $membership->isOwner() ? 'Owner' : ' Membre' }}
+                                {{ $membership->role === 'owner'  ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
+                                {{ $membership->role === 'owner' ? 'Owner' : 'Membre' }}
                             </span>
                         </li>
                     @endforeach

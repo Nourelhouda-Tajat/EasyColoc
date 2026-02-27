@@ -72,7 +72,7 @@ class ColocationController extends Controller
             ->whereNull('left_at')
             ->exists();
 
-        if ($isMember) {
+        if (!$isMember) {
             abort(403, 'Vous n\'avez pas accès à cette colocation.');
         }
         $colocation->load(['owner']);
