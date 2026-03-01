@@ -37,12 +37,12 @@
     <div class="grid grid-cols-3 gap-6 mb-12">
         <div class="bg-white p-6 rounded-2xl shadow-sm">
             <p class="text-sm text-gray-500">Total dépenses</p>
-            <p class="text-2xl font-bold text-[#1B4332]">{{ number_format($stats['total_expenses'], 2, ',', ' ') }} €</p>
+            <p class="text-2xl font-bold text-[#1B4332]">{{ number_format($stats['total_expenses'], 2, ',', ' ') }} DH</p>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm">
             <p class="text-sm text-gray-500">Mon solde</p>
             <p class="text-2xl font-bold {{ $stats['user_balance'] < 0 ? 'text-red-500' : 'text-green-500' }}">
-                {{ number_format($stats['user_balance'], 2, ',', ' ') }} €
+                {{ number_format($stats['user_balance'], 2, ',', ' ') }} DH
             </p>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm">

@@ -46,7 +46,7 @@
         <form action="{{ route('colocations.expenses.store', $colocation) }}" method="POST" class="grid grid-cols-2 gap-4">
             @csrf
             <input type="text" name="title" placeholder="Titre de la dépense" required class="col-span-2 bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
-            <input type="number" step="0.01" name="amount" placeholder="Montant (€)" required class="bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
+            <input type="number" step="0.01" name="amount" placeholder="Montant (DH)" required class="bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
             <input type="date" name="date" value="{{ date('Y-m-d') }}" required class="bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
             <select name="category_id" required class="col-span-2 bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
                 <option value="">Sélectionnez une catégorie</option>
@@ -72,7 +72,7 @@
     <div class="bg-[#2D5A4C] rounded-[32px] p-8 text-white mb-10 flex justify-between items-center shadow-xl shadow-[#2D5A4C]/10">
         <div>
             <p class="text-white/60 text-xs font-bold uppercase tracking-widest mb-2">Mon solde actuel</p>
-            <h2 class="text-5xl font-bold">{{ number_format($userBalance ?? -87.50, 2, ',', ' ') }} €</h2>
+            <h2 class="text-5xl font-bold">{{ number_format($userBalance ?? -87.50, 2, ',', ' ') }} DH</h2>
             <p class="text-white/40 text-xs mt-4 italic font-medium">
                 @if(($userBalance ?? 0) < 0)
                     Vous devez de l'argent à vos colocataires
@@ -84,9 +84,11 @@
             </p>
         </div>
         <div class="text-right">
-            <div class="bg-white/10 px-4 py-1.5 rounded-full text-[10px] font-bold inline-block mb-4">Janvier 2026</div>
+            <div class="bg-white/10 px-4 py-1.5 rounded-full text-[10px] font-bold inline-block mb-4">
+                {{ $selectedMonth ? ucfirst(\Carbon\Carbon::create()->month($selectedMonth)->translatedFormat('F')) . ' ' . $selectedYear : 'Tous les mois' }}
+            </div>
             <p class="text-white/40 text-[10px] font-bold uppercase">Total dépenses</p>
-            <p class="text-2xl font-bold">{{ number_format($totalExpenses ?? 1248.00, 2, ',', ' ') }} €</p>
+            <p class="text-2xl font-bold">{{ number_format($totalExpenses ?? 1248.00, 2, ',', ' ') }} DH</p>
         </div>
     </div>
 
@@ -159,18 +161,34 @@
 
     {{-- CONTENU Onglet Dépenses --}}
     <div id="tab-expenses" class="tab-content hidden">
+        @php
+            $filterMonths = [];
+            for ($i = 0; $i < 4; $i++) {
+                $date = now()->subMonths($i);
+                $filterMonths[] = [
+                    'num' => $date->format('m'),
+                    'year' => $date->format('Y'),
+                    'name' => ucfirst($date->translatedFormat('F')), // "Janvier", "Février"...
+                ];
+            }
+        @endphp
         <div class="flex gap-2 mb-6">
-            <button class="px-4 py-2 rounded-lg bg-[#F0F4F2] text-[#1B4332] text-xs font-bold">Tous</button>
-            <button class="px-4 py-2 rounded-lg text-gray-400 text-xs font-bold hover:bg-gray-50">Janvier</button>
-            <button class="px-4 py-2 rounded-lg text-gray-400 text-xs font-bold hover:bg-gray-50">Décembre</button>
-            <button class="px-4 py-2 rounded-lg text-gray-400 text-xs font-bold hover:bg-gray-50">Novembre</button>
+            {{-- Bouton "Tous" --}}
+            <a href="{{ route('colocations.show', $colocation) }}" 
+               class="px-4 py-2 rounded-lg text-xs font-bold transition {{ !$selectedMonth ? 'bg-[#F0F4F2] text-[#1B4332]' : 'text-gray-400 hover:bg-gray-50' }}">
+                Tous
+            </a>
+            
+            {{-- Boutons Dynamiques des mois --}}
+            @foreach($filterMonths as $m)
+                <a href="{{ route('colocations.show', ['colocation' => $colocation, 'month' => $m['num'], 'year' => $m['year']]) }}" 
+                   class="px-4 py-2 rounded-lg text-xs font-bold transition {{ $selectedMonth == $m['num'] && $selectedYear == $m['year'] ? 'bg-[#F0F4F2] text-[#1B4332]' : 'text-gray-400 hover:bg-gray-50' }}">
+                    {{ $m['name'] }}
+                </a>
+            @endforeach
         </div>
 
         <div class="space-y-3">
-            @php
-                $expenses = $colocation->expenses()->with(['category', 'payer'])->orderBy('date', 'desc')->get();
-            @endphp
-            
             @forelse($expenses as $expense)
             <div class="bg-white p-5 rounded-2xl border border-gray-50 shadow-sm flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -181,12 +199,12 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <p class="font-bold text-[#1B4332]">{{ number_format($expense->amount, 2, ',', ' ') }} €</p>
+                    <p class="font-bold text-[#1B4332]">{{ number_format($expense->amount, 2, ',', ' ') }} DH</p>
                     <p class="text-[10px] {{ $expense->payer_id === Auth::id() ? 'text-green-500' : 'text-red-400' }}">
                         @if($expense->payer_id === Auth::id())
-                            +{{ number_format($expense->amount / $activeMembers->count(), 2, ',', ' ') }} € à récupérer
+                            +{{ number_format($expense->amount / $activeMembers->count(), 2, ',', ' ') }} DH à récupérer
                         @else
-                            -{{ number_format($expense->amount / $activeMembers->count(), 2, ',', ' ') }} € à régler
+                            -{{ number_format($expense->amount / $activeMembers->count(), 2, ',', ' ') }} DH à régler
                         @endif
                     </p>
                 </div>
@@ -226,7 +244,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-xl font-bold text-red-500">47,63 €</span>
+                    <span class="text-xl font-bold text-red-500">47,63 DH</span>
                     <button class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
                         Marquer payé
                     </button>
@@ -246,7 +264,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-xl font-bold text-red-500">39,87 €</span>
+                    <span class="text-xl font-bold text-red-500">39,87 DH</span>
                     <button class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
                         Marquer payé
                     </button>
@@ -266,7 +284,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="text-xl font-bold text-green-600">32,10 €</span>
+                    <span class="text-xl font-bold text-green-600">32,10 DH</span>
                     <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition">
                         Confirmer reçu
                     </button>
@@ -278,9 +296,9 @@
             <div class="flex justify-between items-center">
                 <div>
                     <p class="text-sm font-bold text-[#1B4332]">Bilan net</p>
-                    <p class="text-xs text-gray-400">Après toutes les transactions, vous serez à 0 €</p>
+                    <p class="text-xs text-gray-400">Après toutes les transactions, vous serez à 0 DH</p>
                 </div>
-                <span class="text-xl font-bold text-red-500">-55,40 € net</span>
+                <span class="text-xl font-bold text-red-500">-55,40 DH net</span>
             </div>
         </div>
     </div>

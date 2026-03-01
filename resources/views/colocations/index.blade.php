@@ -26,7 +26,7 @@
                         <p class="text-[10px] text-gray-400 uppercase font-bold">Membres</p>
                     </div>
                     <div>
-                        <p class="text-lg font-bold">0€</p>
+                        <p class="text-lg font-bold">0 DH</p>
                         <p class="text-[10px] text-gray-400 uppercase font-bold">Dépenses</p>
                     </div>
                 </div>

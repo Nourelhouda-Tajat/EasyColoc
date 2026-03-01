@@ -77,6 +77,15 @@ class ColocationController extends Controller
             abort(403, 'Accès refusé : vous n\'êtes pas membre de cette colocation.');
         }
         $activeMembers = $colocation->memberships()->with('user')->whereNull('left_at')->get();
+        
+        $selectedMonth = $request->query('month'); 
+        $selectedYear = $request->query('year', now()->year);
+        $expensesQuery = $colocation->expenses()->with(['category', 'payer'])->orderBy('date', 'desc');
+        if ($selectedMonth) {
+            $expensesQuery->whereMonth('date', $selectedMonth)
+                          ->whereYear('date', $selectedYear);
+        }
+        $expenses = $expensesQuery->get();
 
         $totalExpenses = $colocation->expenses()->sum('amount');
 
@@ -87,7 +96,7 @@ class ColocationController extends Controller
             ->orWhere('coloc_id', $colocation->id)
             ->orderBy('name')
             ->get();
-        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories'));
+        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 'expenses', 'selectedMonth', 'selectedYear'));
     }
     
     public function update(Request $request, Colocation $colocation)
