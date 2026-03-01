@@ -67,7 +67,6 @@ class ColocationController extends Controller
 
     public function show(Request $request, Colocation $colocation)
     {
-        
         $isMember = $colocation->memberships()
             ->where('user_id', Auth::id())
             ->whereNull('left_at')
@@ -76,11 +75,13 @@ class ColocationController extends Controller
         if (!$isMember) {
             abort(403, 'Accès refusé : vous n\'êtes pas membre de cette colocation.');
         }
+
         $activeMembers = $colocation->memberships()->with('user')->whereNull('left_at')->get();
         
         $selectedMonth = $request->query('month'); 
         $selectedYear = $request->query('year', now()->year);
         $filterTitle = $selectedMonth ? ucfirst(\Carbon\Carbon::create($selectedYear, $selectedMonth, 1)->translatedFormat('F Y')) : 'Tous les mois';
+        
         $expensesQuery = $colocation->expenses()->with(['category', 'payer'])->orderBy('date', 'desc');
         if ($selectedMonth) {
             $expensesQuery->whereMonth('date', $selectedMonth)
@@ -90,14 +91,23 @@ class ColocationController extends Controller
 
         $totalExpenses = $colocation->expenses()->sum('amount');
 
-        // 4. Solde de l'utilisateur (Pour l'instant on met 0, on implémentera 
-        // la logique complexe de calcul des dettes dans une prochaine tâche !)
-        $userBalance = 0; 
-        $categories = Category::whereNull('coloc_id')
+        $categories = \App\Models\Category::whereNull('coloc_id')
             ->orWhere('coloc_id', $colocation->id)
             ->orderBy('name')
             ->get();
-        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 'expenses', 'selectedMonth', 'selectedYear', 'filterTitle'));
+
+        $debtData = $colocation->calculateDebts();
+        $suggestedSettlements = $debtData['suggested'];
+        
+        $userBalance = 0;
+        if (isset($debtData['balances'][Auth::id()])) {
+            $userBalance = $debtData['balances'][Auth::id()]['net'];
+        }
+
+        return view('colocations.show', compact(
+            'colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 
+            'expenses', 'selectedMonth', 'selectedYear', 'filterTitle', 'suggestedSettlements'
+        ));
     }
     
     public function update(Request $request, Colocation $colocation)
@@ -135,7 +145,6 @@ class ColocationController extends Controller
 
         $membership->update(['left_at' => now()]);
 
-        // (Optionnel pour plus tard : C'est ici qu'on gérera la réputation s'il part avec des dettes !)
 
         return redirect()->route('dashboard')->with('success', 'Vous avez quitté la colocation avec succès.');
     }

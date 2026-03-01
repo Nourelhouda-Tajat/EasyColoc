@@ -73,4 +73,15 @@ class User extends Authenticatable
                     })
                     ->exists();
     }
+
+    public function paidSettlements()
+    {
+        return $this->hasMany(Settlement::class, 'debtor_id');
+    }
+
+    
+    public function receivedSettlements()
+    {
+        return $this->hasMany(Settlement::class, 'creditor_id');
+    }
 }
