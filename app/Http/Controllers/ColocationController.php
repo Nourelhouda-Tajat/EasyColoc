@@ -65,7 +65,7 @@ class ColocationController extends Controller
 
     }
 
-    public function show(Colocation $colocation)
+    public function show(Request $request, Colocation $colocation)
     {
         
         $isMember = $colocation->memberships()
@@ -80,6 +80,7 @@ class ColocationController extends Controller
         
         $selectedMonth = $request->query('month'); 
         $selectedYear = $request->query('year', now()->year);
+        $filterTitle = $selectedMonth ? ucfirst(\Carbon\Carbon::create($selectedYear, $selectedMonth, 1)->translatedFormat('F Y')) : 'Tous les mois';
         $expensesQuery = $colocation->expenses()->with(['category', 'payer'])->orderBy('date', 'desc');
         if ($selectedMonth) {
             $expensesQuery->whereMonth('date', $selectedMonth)
@@ -96,7 +97,7 @@ class ColocationController extends Controller
             ->orWhere('coloc_id', $colocation->id)
             ->orderBy('name')
             ->get();
-        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 'expenses', 'selectedMonth', 'selectedYear'));
+        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 'expenses', 'selectedMonth', 'selectedYear', 'filterTitle'));
     }
     
     public function update(Request $request, Colocation $colocation)

@@ -85,7 +85,7 @@
         </div>
         <div class="text-right">
             <div class="bg-white/10 px-4 py-1.5 rounded-full text-[10px] font-bold inline-block mb-4">
-                {{ $selectedMonth ? ucfirst(\Carbon\Carbon::create()->month($selectedMonth)->translatedFormat('F')) . ' ' . $selectedYear : 'Tous les mois' }}
+            {{ $filterTitle }}   
             </div>
             <p class="text-white/40 text-[10px] font-bold uppercase">Total dépenses</p>
             <p class="text-2xl font-bold">{{ number_format($totalExpenses ?? 1248.00, 2, ',', ' ') }} DH</p>
@@ -174,14 +174,14 @@
         @endphp
         <div class="flex gap-2 mb-6">
             {{-- Bouton "Tous" --}}
-            <a href="{{ route('colocations.show', $colocation) }}" 
+            <a href="{{ route('colocations.show', $colocation) }}#expenses" 
                class="px-4 py-2 rounded-lg text-xs font-bold transition {{ !$selectedMonth ? 'bg-[#F0F4F2] text-[#1B4332]' : 'text-gray-400 hover:bg-gray-50' }}">
                 Tous
             </a>
             
             {{-- Boutons Dynamiques des mois --}}
             @foreach($filterMonths as $m)
-                <a href="{{ route('colocations.show', ['colocation' => $colocation, 'month' => $m['num'], 'year' => $m['year']]) }}" 
+                <a href="{{ route('colocations.show', ['colocation' => $colocation, 'month' => $m['num'], 'year' => $m['year']]) }}#expenses" 
                    class="px-4 py-2 rounded-lg text-xs font-bold transition {{ $selectedMonth == $m['num'] && $selectedYear == $m['year'] ? 'bg-[#F0F4F2] text-[#1B4332]' : 'text-gray-400 hover:bg-gray-50' }}">
                     {{ $m['name'] }}
                 </a>
@@ -190,7 +190,7 @@
 
         <div class="space-y-3">
             @forelse($expenses as $expense)
-            <div class="bg-white p-5 rounded-2xl border border-gray-50 shadow-sm flex items-center justify-between">
+            <div class="bg-white p-5 rounded-2xl border border-gray-50 shadow-sm flex items-center justify-between group">
                 <div class="flex items-center gap-4">
                     <div class="w-3 h-3 rounded-full {{ $expense->payer_id === Auth::id() ? 'bg-green-400' : 'bg-gray-300' }}"></div>
                     <div>
@@ -210,13 +210,21 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="bg-[#F9F8F3] text-gray-500 text-[9px] font-bold px-2 py-1 rounded uppercase">
-                        {{ $expense->category->name ?? 'DIVERS' }}
+                        {{ $expense->category->name }}
                     </span>
+                    
+                    {{-- Bouton Éditer : Visible seulement par l'Owner ou le Payeur --}}
+                    @if(Auth::id() === $colocation->owner_id || Auth::id() === $expense->payer_id)
+                        <button type="button" 
+                            onclick="openEditModal({{ $expense->id }}, '{{ addslashes($expense->title) }}', {{ $expense->amount }}, '{{ $expense->date }}', {{ $expense->category_id }}, {{ $expense->payer_id }})" 
+                            class="opacity-0 group-hover:opacity-100 transition p-2 text-gray-400 hover:text-orange-500">
+                            edit
+                        </button>
+                    @endif
                 </div>
             </div>
             @empty
             <div class="text-center py-12 text-gray-400">
-                <p class="text-4xl mb-2">💰</p>
                 <p>Aucune dépense enregistrée</p>
             </div>
             @endforelse
@@ -302,6 +310,7 @@
             </div>
         </div>
     </div>
+    @include('colocations.partials.edit-expense-modal')
 
     {{-- JAVASCRIPT pour les onglets --}}
     <script>
@@ -320,6 +329,38 @@
             var activeBtn = document.getElementById('btn-' + tabName);
             activeBtn.classList.remove('text-gray-400');
             activeBtn.classList.add('text-[#1B4332]', 'border-b-2', 'border-[#1B4332]');
+            window.history.replaceState(null, null, '#' + tabName);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var hash = window.location.hash.substr(1); // Récupère le mot après le #
+            
+            if(hash === 'expenses' || hash === 'members' || hash === 'debts') {
+                showTab(hash);
+            } 
+            else if (window.location.search.includes('month=')) {
+                showTab('expenses');
+            }
+        });
+        function openEditModal(expenseId, title, amount, date, categoryId, payerId) {
+            document.getElementById('edit-expense-modal').classList.remove('hidden');
+            
+            let updateUrl = "{{ route('colocations.expenses.update', ['colocation' => $colocation->id, 'expense' => 'EXPENSE_ID']) }}";
+            let deleteUrl = "{{ route('colocations.expenses.destroy', ['colocation' => $colocation->id, 'expense' => 'EXPENSE_ID']) }}";
+            
+            document.getElementById('edit-expense-form').action = updateUrl.replace('EXPENSE_ID', expenseId);
+            document.getElementById('delete-expense-form').action = deleteUrl.replace('EXPENSE_ID', expenseId);
+
+            document.getElementById('edit-title').value = title;
+            document.getElementById('edit-amount').value = amount;
+            document.getElementById('edit-date').value = date;
+            document.getElementById('edit-category').value = categoryId;
+            document.getElementById('edit-payer').value = payerId;
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-expense-modal').classList.add('hidden');
         }
     </script>
+           
 </x-app-layout>
