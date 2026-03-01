@@ -12,6 +12,23 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        $categories = [
+            'Loyer',
+            'Électricité',
+            'Gaz',
+            'Internet',
+            'Courses Alimentaires',
+            'Produits d\'entretien',
+            'Sorties',
+            'Loisirs',
+            'Divers'
+        ];
+
+        foreach ($categories as $cat) {
+            Category::create([
+                'name' => $cat,
+                'coloc_id' => null,
+            ]);
+        }
     }
 }

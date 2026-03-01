@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('coloc_id')->constrained('colocations')->onDelete('cascade');
             $table->foreignId('category_id')->constrained('categories');
             $table->foreignId('payer_id')->constrained('users')->onDelete('cascade'); 
-            $table->string('title')
+            $table->string('title');
             $table->decimal('amount', 10, 2);
             $table->date('date');
             $table->text('description')->nullable();
