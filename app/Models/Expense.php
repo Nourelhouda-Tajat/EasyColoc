@@ -38,7 +38,5 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'payer_id');
     }
 
-    public function expenses(){
-        return $this->hasMany(Expense::class, 'payer_id');
-    }
+    
 }

@@ -59,6 +59,11 @@ class User extends Authenticatable
     public function memberships(){
         return $this->hasMany(Membership::class);
     }
+    
+    public function paidExpenses(){
+        return $this->hasMany(Expense::class, 'payer_id');
+    }
+
     public function hasActiveColocation()
     {
         return $this->memberships()
