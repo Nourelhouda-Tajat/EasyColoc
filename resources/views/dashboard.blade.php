@@ -1,8 +1,9 @@
 <x-app-layout>
+    <x-alert />
     <div class="flex justify-between items-start mb-8">
         <div>
             <h1 class="text-4xl font-serif-custom text-[#1B4332]">Tableau de bord</h1>
-            <p class="text-gray-400 mt-2 font-medium italic">Bonjour {{ Auth::user()->name }} 👋</p>
+            <p class="text-gray-400 mt-2 font-medium italic">Bonjour {{ Auth::user()->name }} </p>
         </div>
         
         @if(!Auth::user()->hasActiveColocation())
@@ -32,8 +33,23 @@
         </div>
     @endif
 
+    {{-- Stats section  --}}
     <div class="grid grid-cols-3 gap-6 mb-12">
+        <div class="bg-white p-6 rounded-2xl shadow-sm">
+            <p class="text-sm text-gray-500">Total dépenses</p>
+            <p class="text-2xl font-bold text-[#1B4332]">{{ number_format($stats['total_expenses'], 2, ',', ' ') }} €</p>
         </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm">
+            <p class="text-sm text-gray-500">Mon solde</p>
+            <p class="text-2xl font-bold {{ $stats['user_balance'] < 0 ? 'text-red-500' : 'text-green-500' }}">
+                {{ number_format($stats['user_balance'], 2, ',', ' ') }} €
+            </p>
+        </div>
+        <div class="bg-white p-6 rounded-2xl shadow-sm">
+            <p class="text-sm text-gray-500">Membres</p>
+            <p class="text-2xl font-bold text-[#1B4332]">{{ $stats['members_count'] }}</p>
+        </div>
+    </div>
 
     <h2 class="text-2xl font-serif-custom text-[#1B4332] mb-6 leading-tight">Mes colocations</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
@@ -44,9 +60,11 @@
                 <div class="flex items-center gap-5 mb-10">
                     <div class="w-16 h-16 bg-[#F9F8F3] rounded-[24px] flex items-center justify-center text-3xl shadow-inner">🏠</div>
                     <div>
-                        <h4 class="text-2xl font-bold text-[#1B4332]">{{ $activeMembership->name }}</h4>
+                        {{-- accès au nom via la relation colocation --}}
+                        <h4 class="text-2xl font-bold text-[#1B4332]">{{ $activeMembership->colocation->name }}</h4>
+                        {{-- vérification du rôle via le champ 'role' de Membership --}}
                         <p class="text-[11px] font-bold text-orange-400 uppercase tracking-[0.2em] mt-1">
-                            ★ {{ $activeMembership->owner_id === Auth::id() ? 'OWNER' : 'MEMBRE' }}
+                            ★ {{ strtoupper($activeMembership->role) }}
                         </p>
                     </div>
                 </div>
@@ -55,7 +73,7 @@
                         <p class="text-xl font-bold text-[#1B4332]">{{ $stats['members_count'] }}</p>
                         <p class="text-[9px] text-gray-400 uppercase font-bold tracking-widest mt-1">Membres dans la coloc</p>
                     </div>
-                    </div>
+                </div>
             </div>
         @endif
 
@@ -72,7 +90,7 @@
         @endforeach
 
         @if(!$activeMembership)
-            <a href="{{ route('colocations.create') }}" class="border-4 border-dashed border-white rounded-[40px] p-12 flex flex-col items-center justify-center group hover:bg-white/50 transition duration-300">
+            <a href="{{ route('colocations.create') }}" class="border-4 border-dashed border-gray-200 rounded-[40px] p-12 flex flex-col items-center justify-center group hover:bg-white/50 transition duration-300">
                 <div class="w-12 h-12 flex items-center justify-center text-[#2D5A4C] text-4xl mb-4 group-hover:scale-110 transition">+</div>
                 <p class="font-bold text-[#2D5A4C] text-lg">Créer une colocation</p>
             </a>

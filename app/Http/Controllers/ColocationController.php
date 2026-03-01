@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Colocation;
 use App\Models\Membership;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,12 +14,10 @@ class ColocationController extends Controller
     public function index()
     {
         $colocations = Auth::user()->memberships()
-            ->whereNull('left_at')
-            ->whereHas('colocation', function ($query) {
-                $query->where('status', 'active');
-            })
-            ->with('colocation.owner') 
+            ->with('colocation') 
+            ->orderBy('joined_at', 'desc') 
             ->get();
+
         return view('colocations.index', compact('colocations'));
     }
 
@@ -67,46 +66,33 @@ class ColocationController extends Controller
 
     public function show(Colocation $colocation)
     {
+        
         $isMember = $colocation->memberships()
             ->where('user_id', Auth::id())
             ->whereNull('left_at')
             ->exists();
 
         if (!$isMember) {
-            abort(403, 'Vous n\'avez pas accès à cette colocation.');
+            abort(403, 'Accès refusé : vous n\'êtes pas membre de cette colocation.');
         }
-        $colocation->load(['owner']);
-        $activeMembers = $colocation->memberships()
-            ->whereNull('left_at')
-            ->with('user')
-            ->get();
-        return view('colocations.show', compact('colocation','activeMembers'));
+        $activeMembers = $colocation->memberships()->with('user')->whereNull('left_at')->get();
+
+        $totalExpenses = $colocation->expenses()->sum('amount');
+
+        // 4. Solde de l'utilisateur (Pour l'instant on met 0, on implémentera 
+        // la logique complexe de calcul des dettes dans une prochaine tâche !)
+        $userBalance = 0; 
+        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance'));
     }
-
-  
-    public function edit(Colocation $colocation)
-    {
-        if ($colocation->owner_id !== Auth::id()) {
-            abort(403, 'Seul le créateur peut modifier cette colocation.');
-        }
-
-        if ($colocation->status !== 'active') {
-            return redirect()->route('colocations.show', $colocation)
-                ->withErrors(['error' => 'Cette colocation a été annulée.']);
-        }
-
-        return view('colocations.edit', compact('colocation'));
-    }
-
     
     public function update(Request $request, Colocation $colocation)
     {
         if ($colocation->owner_id !== Auth::id()) {
-            abort(403, 'Seul le créateur peut modifier cette colocation.');
+            abort(403, 'Seul le owner peut modifier cette colocation.');
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|min:3',
+            'name' => 'required|string|max:255',
         ]);
 
         $colocation->update($validated);
@@ -115,10 +101,34 @@ class ColocationController extends Controller
             ->with('success', 'Colocation mise à jour.');
     }
 
+    public function leave(Colocation $colocation)
+    {
+        $user = Auth::user();
+
+        if ($colocation->owner_id === $user->id) {
+            return back()->withErrors(['error' => ' Vous devez annuler la colocation.']);
+        }
+
+        $membership = Membership::where('coloc_id', $colocation->id)
+            ->where('user_id', $user->id)
+            ->whereNull('left_at')
+            ->first();
+
+        if (!$membership) {
+            return redirect()->route('dashboard')->withErrors(['error' => 'Vous ne faites plus partie de cette colocation.']);
+        }
+
+        $membership->update(['left_at' => now()]);
+
+        // (Optionnel pour plus tard : C'est ici qu'on gérera la réputation s'il part avec des dettes !)
+
+        return redirect()->route('dashboard')->with('success', 'Vous avez quitté la colocation avec succès.');
+    }
+
     public function destroy(Colocation $colocation)
     {
         if ($colocation->owner_id !== Auth::id()) {
-            abort(403, 'Seul le créateur peut supprimer cette colocation.');
+            abort(403, 'Seul le owner peut supprimer cette colocation.');
         }
 
         $colocation->update([
@@ -128,5 +138,29 @@ class ColocationController extends Controller
 
         return redirect()->route('colocations.index')
             ->with('success', 'Colocation terminé.');
+    }
+
+    public function removeMember(Colocation $colocation, User $member)
+    {
+        if ($colocation->owner_id !== Auth::id()) {
+            abort(403, 'Seul le propriétaire peut retirer un membre.');
+        }
+
+        if ($member->id === Auth::id()) {
+            return back()->withErrors(['error' => 'Vous ne pouvez pas vous retirer vous-même. Utilisez le bouton "Annuler la coloc".']);
+        }
+
+        $membership = Membership::where('coloc_id', $colocation->id)
+            ->where('user_id', $member->id)
+            ->whereNull('left_at')
+            ->first();
+
+        if (!$membership) {
+            return back()->withErrors(['error' => 'Ce membre ne fait pas partie de la colocation active.']);
+        }
+
+        $membership->update(['left_at' => now()]);
+
+        return back()->with('success', $member->name . ' a été retiré de la colocation.');
     }
 }

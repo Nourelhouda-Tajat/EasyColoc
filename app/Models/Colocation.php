@@ -25,6 +25,10 @@ class Colocation extends Model
         return $this->hasMany(Invitation::class, 'coloc_id');
     }
 
+    public function expenses(){
+        return $this->hasMany(Expense::class, 'coloc_id');
+    }
+
     // public function activeMemberships(){
     //     return $this->memberships()->whereNull('left_at');
     // }

@@ -24,7 +24,7 @@
                         <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl {{ request()->routeIs('dashboard') ? 'bg-white/15 text-white' : 'text-white/60' }}">
                             <span>🏠</span> <span>Tableau de bord</span>
                         </a>
-                        <a href="#" class="flex items-center justify-between px-4 py-3 rounded-xl text-white/60 hover:bg-white/5">
+                        <a href="{{ route('colocations.index') }}" class="flex items-center justify-between px-4 py-3 rounded-xl text-white/60 hover:bg-white/5">
                             <div class="flex items-center gap-3"><span>🏢</span> <span>Ma colocation</span></div>
                             <span class="bg-[#E26D5C] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">2</span>
                         </a>
