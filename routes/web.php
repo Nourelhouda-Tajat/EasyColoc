@@ -28,17 +28,7 @@ Route::middleware(['auth', 'check.banned'])->group(function () {
     Route::post('/invitations/{token}/decline', [InvitationController::class, 'decline'])->name('invitations.decline');
     
 
-
-    Route::resource('/colocations/{colocation}/expenses', ExpenseController::class)
-        ->except(['create', 'show']);
-        Route::post('/colocations/{colocation}/expenses', [ExpenseController::class, 'store'])
-    ->name('colocations.expenses.store');
-    
-    Route::put('/colocations/{colocation}/expenses/{expense}', [ExpenseController::class, 'update'])
-        ->name('colocations.expenses.update');
-        
-    Route::delete('/colocations/{colocation}/expenses/{expense}', [ExpenseController::class, 'destroy'])
-        ->name('colocations.expenses.destroy');
+    Route::resource('colocations.expenses', ExpenseController::class)->only(['store', 'update', 'destroy']);
 
 });
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Colocation;
 use App\Models\Membership;
 use App\Models\User;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -82,7 +83,11 @@ class ColocationController extends Controller
         // 4. Solde de l'utilisateur (Pour l'instant on met 0, on implémentera 
         // la logique complexe de calcul des dettes dans une prochaine tâche !)
         $userBalance = 0; 
-        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance'));
+        $categories = Category::whereNull('coloc_id')
+            ->orWhere('coloc_id', $colocation->id)
+            ->orderBy('name')
+            ->get();
+        return view('colocations.show', compact('colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories'));
     }
     
     public function update(Request $request, Colocation $colocation)

@@ -50,7 +50,7 @@
             <input type="date" name="date" value="{{ date('Y-m-d') }}" required class="bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
             <select name="category_id" required class="col-span-2 bg-[#F9F8F3] border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A4C]">
                 <option value="">Sélectionnez une catégorie</option>
-                @foreach(\App\Models\Category::all() as $category)
+                @foreach($categories as $category)
                     <option value="{{ $category->id }}">{{ $category->name }}</option>
                 @endforeach
             </select>
