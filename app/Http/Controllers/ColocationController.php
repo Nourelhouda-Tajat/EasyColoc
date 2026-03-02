@@ -32,7 +32,6 @@ class ColocationController extends Controller
         return view('colocations.create');
     }
 
-
     public function store(Request $request)
     {
         return DB::transaction(function () use ($request) {
@@ -89,6 +88,34 @@ class ColocationController extends Controller
         }
         $expenses = $expensesQuery->get();
 
+        // --- NOUVEAUTÉ : Logique de présentation déplacée de Blade vers le Contrôleur ---
+        
+        // 1. Génération des mois pour le filtre
+        $filterMonths = [];
+        for ($i = 0; $i < 4; $i++) {
+            $date = now()->subMonths($i);
+            $filterMonths[] = [
+                'num' => $date->format('m'),
+                'year' => $date->format('Y'),
+                'name' => ucfirst($date->translatedFormat('F')),
+            ];
+        }
+
+        // 2. Calcul des parts pour l'affichage dynamique
+        $activeMembersCount = max(1, $activeMembers->count());
+        $currentUserId = Auth::id();
+
+        foreach ($expenses as $expense) {
+            $expense->share = $expense->amount / $activeMembersCount;
+            $expense->is_payer = ($expense->payer_id === $currentUserId);
+            
+            // On prépare le montant exact à afficher selon si l'utilisateur a payé ou non
+            $expense->display_amount = $expense->is_payer 
+                ? ($expense->amount - $expense->share) 
+                : $expense->share;
+        }
+        // --------------------------------------------------------------------------------
+
         $totalExpenses = $colocation->expenses()->sum('amount');
 
         $categories = \App\Models\Category::whereNull('coloc_id')
@@ -106,7 +133,7 @@ class ColocationController extends Controller
 
         return view('colocations.show', compact(
             'colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 
-            'expenses', 'selectedMonth', 'selectedYear', 'filterTitle', 'suggestedSettlements'
+            'expenses', 'selectedMonth', 'selectedYear', 'filterTitle', 'suggestedSettlements', 'filterMonths' // <-- Ajout de 'filterMonths' ici
         ));
     }
     

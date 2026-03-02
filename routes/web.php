@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\SettlementController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,8 +23,11 @@ Route::middleware(['auth', 'check.banned'])->group(function () {
     Route::resource('colocations', ColocationController::class)->except(['edit']);
     Route::post('/colocations/{colocation}/leave',[ColocationController::class, 'leave'])->name('colocations.leave');
     Route::delete('/colocations/{colocation}/members/{member}', [ColocationController::class, 'removeMember'])->name('colocations.members.remove');
-    
+
     Route::post('/colocations/{colocation}/settlements', [SettlementController::class, 'store'])->name('colocations.settlements.store');
+
+    Route::post('/colocations/{colocation}/categories', [CategoryController::class, 'store'])->name('colocations.categories.store');
+    Route::delete('/colocations/{colocation}/categories/{category}', [CategoryController::class, 'destroy'])->name('colocations.categories.destroy');
 
     Route::post('/colocations/{colocation}/invite', [InvitationController::class, 'send'])->name('colocations.invite.send');
     Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');

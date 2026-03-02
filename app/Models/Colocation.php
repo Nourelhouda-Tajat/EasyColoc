@@ -33,6 +33,7 @@ class Colocation extends Model
         return $this->hasMany(Settlement::class, 'coloc_id');
     }
 
+
     public function calculateDebts()
     {
         $memberships = $this->memberships()->with('user')->get();
@@ -48,9 +49,18 @@ class Colocation extends Model
         }
 
         foreach ($this->expenses as $expense) {
-            $activeMembersAtTime = $memberships->filter(function($m) use ($expense) {
-                return $m->joined_at <= $expense->date && ($m->left_at === null || $m->left_at >= $expense->date);
+            $expenseDate = \Carbon\Carbon::parse($expense->date)->endOfDay();
+
+            $activeMembersAtTime = $memberships->filter(function($m) use ($expenseDate) {
+                $joinedAt = \Carbon\Carbon::parse($m->joined_at)->startOfDay();
+                $leftAt = $m->left_at ? \Carbon\Carbon::parse($m->left_at)->endOfDay() : null;
+
+                return $joinedAt <= $expenseDate && ($leftAt === null || $leftAt >= $expenseDate);
             });
+
+            if ($activeMembersAtTime->isEmpty()) {
+                $activeMembersAtTime = $memberships->whereNull('left_at');
+            }
 
             if ($activeMembersAtTime->isEmpty()) continue;
 
@@ -75,7 +85,7 @@ class Colocation extends Model
         }
 
         $creditors = []; 
-        $debtors = [];  
+        $debtors = [];   
 
         foreach ($balances as $id => &$b) {
             $b['net'] = ($b['paid_expenses'] + $b['paid_settlements']) - ($b['share_expenses'] + $b['received_settlements']);
@@ -86,7 +96,7 @@ class Colocation extends Model
         }
 
         $suggestedSettlements = [];
-        arsort($creditors);
+        arsort($creditors); 
         arsort($debtors);   
 
         foreach ($debtors as $dId => $dAmount) {

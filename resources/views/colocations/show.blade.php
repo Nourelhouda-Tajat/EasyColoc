@@ -239,77 +239,61 @@
         </div>
 
         <div class="space-y-3">
-            {{-- Dette 1 --}}
-            <div class="bg-white p-5 rounded-2xl border-l-4 border-red-400 shadow-sm flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="flex -space-x-2">
-                        <div class="w-10 h-10 bg-[#F9F8F3] rounded-full flex items-center justify-center font-bold text-xs border-2 border-white text-[#1B4332]">AD</div>
-                        <div class="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center font-bold text-xs text-white border-2 border-white">BM</div>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-[#1B4332]">Vous devez à Bob Martin</h4>
-                        <p class="text-xs text-gray-400">EDF + Courses (janvier)</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-xl font-bold text-red-500">47,63 DH</span>
-                    <button class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
-                        Marquer payé
-                    </button>
-                </div>
-            </div>
+            @forelse($suggestedSettlements as $settlement)
+                @php
+                    $isUserDebtor = $settlement['debtor_id'] === Auth::id();
+                    $isUserCreditor = $settlement['creditor_id'] === Auth::id();
+                    $borderColor = $isUserDebtor ? 'border-red-400' : ($isUserCreditor ? 'border-green-400' : 'border-gray-200');
+                @endphp
 
-            {{-- Dette 2 --}}
-            <div class="bg-white p-5 rounded-2xl border-l-4 border-red-400 shadow-sm flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="flex -space-x-2">
-                        <div class="w-10 h-10 bg-[#F9F8F3] rounded-full flex items-center justify-center font-bold text-xs border-2 border-white text-[#1B4332]">AD</div>
-                        <div class="w-10 h-10 bg-purple-400 rounded-full flex items-center justify-center font-bold text-xs text-white border-2 border-white">CL</div>
+                <div class="bg-white p-5 rounded-2xl border-l-4 {{ $borderColor }} shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="flex -space-x-2">
+                            <div class="w-10 h-10 bg-[#F9F8F3] rounded-full flex items-center justify-center font-bold text-xs border-2 border-white text-[#1B4332]" title="{{ $settlement['debtor']->name }}">
+                                {{ strtoupper(substr($settlement['debtor']->name, 0, 2)) }}
+                            </div>
+                            <div class="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center font-bold text-xs text-white border-2 border-white" title="{{ $settlement['creditor']->name }}">
+                                {{ strtoupper(substr($settlement['creditor']->name, 0, 2)) }}
+                            </div>
+                        </div>
+                        <div>
+                            @if($isUserDebtor)
+                                <h4 class="font-bold text-[#1B4332]">Vous devez à {{ $settlement['creditor']->name }}</h4>
+                            @elseif($isUserCreditor)
+                                <h4 class="font-bold text-[#1B4332]">{{ $settlement['debtor']->name }} vous doit</h4>
+                            @else
+                                <h4 class="font-bold text-[#1B4332]">{{ $settlement['debtor']->name }} doit à {{ $settlement['creditor']->name }}</h4>
+                            @endif
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="font-bold text-[#1B4332]">Vous devez à Clara Leroy</h4>
-                        <p class="text-xs text-gray-400">Produits ménagers</p>
+                    
+                    <div class="flex items-center gap-4">
+                        <span class="text-xl font-bold {{ $isUserCreditor ? 'text-green-600' : ($isUserDebtor ? 'text-red-500' : 'text-gray-600') }}">
+                            {{ number_format($settlement['amount'], 2, ',', ' ') }} DH
+                        </span>
+                        
+                        {{-- Bouton "Marquer payé" visible seulement pour celui qui doit l'argent --}}
+                        @if($isUserDebtor)
+                            <form action="{{ route('colocations.settlements.store', $colocation) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="creditor_id" value="{{ $settlement['creditor_id'] }}">
+                                <input type="hidden" name="amount" value="{{ $settlement['amount'] }}">
+                                <button type="submit" onclick="return confirm('Confirmer que vous avez remboursé {{ $settlement['amount'] }} DH à {{ $settlement['creditor']->name }} ?')" class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
+                                    Marquer payé
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-xl font-bold text-red-500">39,87 DH</span>
-                    <button class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
-                        Marquer payé
-                    </button>
+            @empty
+                <div class="text-center py-12 text-gray-400">
+                    <p class="text-4xl mb-2">🎉</p>
+                    <p>Tout est équilibré ! Personne ne doit rien à personne.</p>
                 </div>
-            </div>
-
-            {{-- Dette 3 --}}
-            <div class="bg-white p-5 rounded-2xl border-l-4 border-green-400 shadow-sm flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="flex -space-x-2">
-                        <div class="w-10 h-10 bg-orange-400 rounded-full flex items-center justify-center font-bold text-xs text-white border-2 border-white">DP</div>
-                        <div class="w-10 h-10 bg-[#F9F8F3] rounded-full flex items-center justify-center font-bold text-xs border-2 border-white text-[#1B4332]">AD</div>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-[#1B4332]">David Petit vous doit</h4>
-                        <p class="text-xs text-gray-400">Courses + Raclette</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-xl font-bold text-green-600">32,10 DH</span>
-                    <button class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition">
-                        Confirmer reçu
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="mt-6 bg-[#F9F8F3] p-5 rounded-2xl border border-gray-100">
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="text-sm font-bold text-[#1B4332]">Bilan net</p>
-                    <p class="text-xs text-gray-400">Après toutes les transactions, vous serez à 0 DH</p>
-                </div>
-                <span class="text-xl font-bold text-red-500">-55,40 DH net</span>
-            </div>
+            @endforelse
         </div>
     </div>
+
     @include('colocations.partials.edit-expense-modal')
 
     {{-- JAVASCRIPT pour les onglets --}}

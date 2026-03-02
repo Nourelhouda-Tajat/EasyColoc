@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invitation; 
 use App\Models\Colocation;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,16 +32,23 @@ class DashboardController extends Controller
         
         $pendingInvitations = Invitation::where('email', Auth::user()->email)
             ->where('status', 'pending')
-            // ->where('expires_at', '>', now())
             ->with('colocation.owner')
             ->get();
 
-        $colocation = $activeMembership ? $activeMembership->colocation : null;
-
+        if ($activeMembership) {
+        $colocation = $activeMembership->colocation;
         
+        $debtData = $colocation->calculateDebts();
+        
+        $stats['total_expenses'] = $colocation->expenses()->sum('amount');
+        $stats['members_count'] = $colocation->memberships()->whereNull('left_at')->count();
+        if (isset($debtData['balances'][Auth::user()->id])) {
+            $stats['user_balance'] = $debtData['balances'][Auth::user()->id]['net'];
+        }
+    }
         $stats = [
-            'total_expenses' => 1248.00, // À dynamiser plus tard
-            'user_balance' => -87.40,    // À dynamiser plus tard
+            'total_expenses' => 0, 
+            'user_balance' => 0,    
             'members_count' => $colocation ? $colocation->memberships->count() : 0,
         ];
 
