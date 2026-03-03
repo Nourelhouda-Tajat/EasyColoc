@@ -22,7 +22,6 @@
                         <span class="text-lg">🏢</span>
                         <span class="font-medium">Ma colocation</span>
                     </div>
-                    <span class="bg-[#E26D5C] text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">2</span>
                 </a>
             </div>
         </div>

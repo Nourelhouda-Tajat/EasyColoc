@@ -66,74 +66,60 @@ class ColocationController extends Controller
 
     public function show(Request $request, Colocation $colocation)
     {
-        $isMember = $colocation->memberships()
-            ->where('user_id', Auth::id())
-            ->whereNull('left_at')
-            ->exists();
+        $currentUserId = Auth::id();
 
-        if (!$isMember) {
+        // 1. SÉCURITÉ : Vérifier si l'utilisateur est membre actif (plus court)
+        if (!$colocation->memberships()->where('user_id', $currentUserId)->whereNull('left_at')->exists()) {
             abort(403, 'Accès refusé : vous n\'êtes pas membre de cette colocation.');
         }
 
+        // 2. DONNÉES DE BASE : Membres et Catégories
         $activeMembers = $colocation->memberships()->with('user')->whereNull('left_at')->get();
-        
-        $selectedMonth = $request->query('month'); 
-        $selectedYear = $request->query('year', now()->year);
-        $filterTitle = $selectedMonth ? ucfirst(\Carbon\Carbon::create($selectedYear, $selectedMonth, 1)->translatedFormat('F Y')) : 'Tous les mois';
-        
-        $expensesQuery = $colocation->expenses()->with(['category', 'payer'])->orderBy('date', 'desc');
-        if ($selectedMonth) {
-            $expensesQuery->whereMonth('date', $selectedMonth)
-                          ->whereYear('date', $selectedYear);
-        }
-        $expenses = $expensesQuery->get();
+        $categories = Category::whereNull('coloc_id')->orWhere('coloc_id', $colocation->id)->get();
 
-        // --- NOUVEAUTÉ : Logique de présentation déplacée de Blade vers le Contrôleur ---
+        // 3. LE FILTRE MENSUEL
+        $selectedMonth = $request->month; // Raccourci Laravel pour $request->query('month')
+        $selectedYear = $request->year ?? now()->year; // '??' signifie "ou bien l'année actuelle si c'est vide"
         
-        // 1. Génération des mois pour le filtre
+        $filterTitle = $selectedMonth 
+            ? ucfirst(\Carbon\Carbon::create($selectedYear, $selectedMonth, 1)->translatedFormat('F Y')) 
+            : 'Tous les mois';
+
+        // Liste des 12 mois (Simplifiée avec now()->month($m))
         $filterMonths = [];
-        for ($i = 0; $i < 4; $i++) {
-            $date = now()->subMonths($i);
+        for ($m = 1; $m <= 12; $m++) {
             $filterMonths[] = [
-                'num' => $date->format('m'),
-                'year' => $date->format('Y'),
-                'name' => ucfirst($date->translatedFormat('F')),
+                'num' => str_pad($m, 2, '0', STR_PAD_LEFT), // Ajoute un zéro : "01", "02"...
+                'name' => ucfirst(now()->month($m)->translatedFormat('F')), 
             ];
         }
 
-        // 2. Calcul des parts pour l'affichage dynamique
-        $activeMembersCount = max(1, $activeMembers->count());
-        $currentUserId = Auth::id();
-
-        foreach ($expenses as $expense) {
-            $expense->share = $expense->amount / $activeMembersCount;
-            $expense->is_payer = ($expense->payer_id === $currentUserId);
-            
-            // On prépare le montant exact à afficher selon si l'utilisateur a payé ou non
-            $expense->display_amount = $expense->is_payer 
-                ? ($expense->amount - $expense->share) 
-                : $expense->share;
+        // 4. LES DÉPENSES
+        $expensesQuery = $colocation->expenses()->with(['category', 'payer'])->orderBy('date', 'desc');
+        
+        if ($selectedMonth) {
+            $expensesQuery->whereMonth('date', $selectedMonth)->whereYear('date', $selectedYear);
         }
-        // --------------------------------------------------------------------------------
-
+        
+        $expenses = $expensesQuery->get();
         $totalExpenses = $colocation->expenses()->sum('amount');
 
-        $categories = \App\Models\Category::whereNull('coloc_id')
-            ->orWhere('coloc_id', $colocation->id)
-            ->orderBy('name')
-            ->get();
+        // On indique à la vue si c'est nous qui avons payé
+        foreach ($expenses as $expense) {
+            $expense->is_payer = ($expense->payer_id === $currentUserId);
+        }
 
+        // 5. LES MATHÉMATIQUES (Dettes)
         $debtData = $colocation->calculateDebts();
         $suggestedSettlements = $debtData['suggested'];
         
-        $userBalance = 0;
-        if (isset($debtData['balances'][Auth::id()])) {
-            $userBalance = $debtData['balances'][Auth::id()]['net'];
-        }
+        // Astuce très pratique : '?? 0' renvoie 0 si l'utilisateur n'est pas trouvé dans le tableau !
+        $userBalance = $debtData['balances'][$currentUserId]['net'] ?? 0;
 
+        // 6. ENVOI À LA VUE
         return view('colocations.show', compact(
             'colocation', 'activeMembers', 'totalExpenses', 'userBalance', 'categories', 
-            'expenses', 'selectedMonth', 'selectedYear', 'filterTitle', 'suggestedSettlements', 'filterMonths' // <-- Ajout de 'filterMonths' ici
+            'expenses', 'selectedMonth', 'selectedYear', 'filterTitle', 'suggestedSettlements', 'filterMonths'
         ));
     }
     

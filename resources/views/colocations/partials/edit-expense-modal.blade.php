@@ -34,7 +34,7 @@
             
             <div class="col-span-2 flex gap-3 mt-4">
                 <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">Annuler</button>
-                <button type="submit" class="flex-1 bg-orange-500 text-white px-4 py-3 rounded-xl font-bold text-sm hover:bg-orange-600 transition shadow-lg shadow-orange-500/20">Mettre à jour</button>
+                <button type="submit" class="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition">Mettre à jour</button>
             </div>
         </form>
         

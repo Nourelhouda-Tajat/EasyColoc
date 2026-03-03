@@ -26,7 +26,6 @@
                         </a>
                         <a href="{{ route('colocations.index') }}" class="flex items-center justify-between px-4 py-3 rounded-xl text-white/60 hover:bg-white/5">
                             <div class="flex items-center gap-3"><span>🏢</span> <span>Ma colocation</span></div>
-                            <span class="bg-[#E26D5C] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">2</span>
                         </a>
                     </div>
 
