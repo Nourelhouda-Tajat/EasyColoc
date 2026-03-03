@@ -14,12 +14,26 @@ class ColocationController extends Controller
 {
     public function index()
     {
+        // On récupère les colocations avec leurs relations pour éviter de surcharger la base de données
         $colocations = Auth::user()->memberships()
-            ->with('colocation') 
+            ->with(['colocation.memberships', 'colocation.expenses']) 
             ->orderBy('joined_at', 'desc') 
             ->get();
 
+        // MVC : Préparation des données pour la vue
+        foreach ($colocations as $membership) {
+            $coloc = $membership->colocation;
+            
+            // Est-ce que la coloc est active ET que l'utilisateur y est encore ?
+            $membership->is_active = ($coloc->status === 'active' && is_null($membership->left_at));
+            
+            // Calculs dynamiques
+            $membership->members_count = $coloc->memberships->whereNull('left_at')->count();
+            $membership->total_expenses = $coloc->expenses->sum('amount');
+        }
+
         return view('colocations.index', compact('colocations'));
+    
     }
 
     public function create()
