@@ -7,11 +7,17 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AdminController;
-use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    
+    Route::get('/', [AdminController::class, 'index'])->name('index');
+    
+    Route::post('/users/{user}/toggle-ban', [AdminController::class, 'toggleBan'])->name('users.toggle-ban');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
