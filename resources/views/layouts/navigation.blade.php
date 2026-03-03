@@ -12,7 +12,7 @@
                 <span>Tableau de bord</span>
             </a>
             <a href="{{ route('colocations.index') }}" class="flex items-center justify-between px-4 py-3 rounded-xl {{ request()->routeIs('colocations.*') ? 'bg-white/15 text-white' : 'text-white/60 hover:bg-white/5 transition' }}">
-                <span>Ma colocation</span>
+                <span>Mes colocation</span>
             </a>
         </div>
 

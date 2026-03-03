@@ -186,17 +186,32 @@ class ColocationController extends Controller
 
     public function destroy(Colocation $colocation)
     {
+        // 1. Vérification : l'utilisateur est-il bien le propriétaire ?
         if ($colocation->owner_id !== Auth::id()) {
             abort(403, 'Seul le owner peut supprimer cette colocation.');
         }
 
+        // 2. Compter les autres membres actifs (en excluant le propriétaire)
+        $otherActiveMembersCount = $colocation->memberships()
+            ->whereNull('left_at')
+            ->where('user_id', '!=', Auth::id())
+            ->count();
+
+        // 3. Bloquer l'annulation s'il reste des membres
+        if ($otherActiveMembersCount > 0) {
+            return back()->withErrors(['error' => 'Impossible d\'annuler la colocation : il reste encore ' . $otherActiveMembersCount . ' membre(s) actif(s). Vous devez d\'abord les retirer.']);
+        }
+
+        // 4. Si la colocation est vide (à part le propriétaire), on procède à l'annulation
         $colocation->update([
             'status' => 'inactive', 
         ]);
+        
+        // On marque le départ de tous les membres (y compris le propriétaire)
         $colocation->memberships()->update(['left_at' => now()]);
 
         return redirect()->route('colocations.index')
-            ->with('success', 'Colocation terminé.');
+            ->with('success', 'Colocation annulée et terminée avec succès.');
     }
 
     public function removeMember(Colocation $colocation, User $member)
