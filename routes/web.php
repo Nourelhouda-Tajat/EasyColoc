@@ -6,6 +6,8 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AdminController;
+use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {

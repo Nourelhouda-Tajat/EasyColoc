@@ -131,8 +131,8 @@
                     <span class="bg-[#FFF8F0] text-orange-400 text-[9px] font-bold px-3 py-1 rounded-lg uppercase tracking-widest border border-orange-50">
                         {{ $membership->role }}
                     </span>
-                    <span class="bg-[#F0FDF4] text-green-600 text-[9px] font-bold px-3 py-1 rounded-lg uppercase border border-green-50">
-                        ★ +8 Excellent
+                    <span>
+                        <x-reputation-badge :reputation="$membership->user->reputation" />
                     </span>
                     
                     @if(Auth::id() === $colocation->owner_id && $membership->user_id !== Auth::id())

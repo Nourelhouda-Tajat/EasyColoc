@@ -155,6 +155,14 @@ class ColocationController extends Controller
         if (!$membership) {
             return redirect()->route('dashboard')->withErrors(['error' => 'Vous ne faites plus partie de cette colocation.']);
         }
+        $debtData = $colocation->calculateDebts();
+        $net = $debtData['balances'][$user->id]['net'] ?? 0;
+
+        if ($net < 0) {
+            $user->decrement('reputation'); // Il part avec des dettes : -1
+        } else {
+            $user->increment('reputation'); // Il part clean : +1
+        }
 
         $membership->update(['left_at' => now()]);
 
@@ -194,6 +202,25 @@ class ColocationController extends Controller
 
         if (!$membership) {
             return back()->withErrors(['error' => 'Ce membre ne fait pas partie de la colocation active.']);
+        }
+
+        $debtData = $colocation->calculateDebts();
+        $net = $debtData['balances'][$member->id]['net'] ?? 0;
+
+        if ($net < 0) {
+            $member->decrement('reputation'); // Pénalité : -1
+
+            // Transfert de la dette à l'Owner
+            \App\Models\Settlement::create([
+                'coloc_id' => $colocation->id,
+                'debtor_id' => $member->id,             // Le membre expulsé "paie" virtuellement...
+                'creditor_id' => $colocation->owner_id, // ...à l'Owner.
+                'amount' => abs($net),
+                'date' => now(),
+                'status' => 'paid',
+            ]);
+        } else {
+            $member->increment('reputation'); // Il est expulsé mais ne devait rien : +1
         }
 
         $membership->update(['left_at' => now()]);
