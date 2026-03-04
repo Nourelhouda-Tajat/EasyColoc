@@ -154,13 +154,11 @@
     <div id="tab-expenses" class="tab-content hidden">
         
         <div class="mb-6">
-            {{-- Select avec les 12 mois. Le onChange redirige avec l'URL + l'ancre #expenses --}}
             <select onchange="window.location.href=this.value + '#expenses'" class="bg-[#F0F4F2] text-[#1B4332] rounded-xl text-xs font-bold border-none px-4 py-2.5 focus:ring-2 focus:ring-[#2D5A4C] cursor-pointer outline-none">
                 <option value="{{ route('colocations.show', $colocation) }}">Tous les mois</option>
                 @foreach($filterMonths as $m)
                     <option value="{{ route('colocations.show', ['colocation' => $colocation, 'month' => $m['num'], 'year' => $selectedYear]) }}" {{ $selectedMonth == $m['num'] ? 'selected' : '' }}>
-                        {{ $m['name'] }} {{ $selectedYear }}
-                    </option>
+                        {{ $m['name'] }}
                 @endforeach
             </select>
         </div>
@@ -209,14 +207,37 @@
             </div>
             @endforelse
         </div>
+        {{-- Section Gérer les Catégories (Owner Seulement) --}}
+        @if(Auth::id() === $colocation->owner_id)
+            <div class="bg-[#F9F8F3] p-6 rounded-[24px] border border-gray-100 mt-8">
+                <h4 class="text-[#1B4332] font-bold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                    Gérer les catégories personnalisées
+                </h4>
+                
+                <form action="{{ route('colocations.categories.store', $colocation) }}" method="POST" class="flex gap-3 mb-4">
+                    @csrf
+                    <input type="text" name="name" placeholder="Nouvelle catégorie (ex: Netflix)" required class="flex-1 bg-white border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#2D5A4C] shadow-sm">
+                    <button type="submit" class="bg-[#2D5A4C] text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-[#1B4332] transition">Ajouter</button>
+                </form>
+
+                <div class="flex flex-wrap gap-2">
+                    @foreach($categories->where('coloc_id', $colocation->id) as $customCategory)
+                        <div class="bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-[#1B4332] flex items-center gap-2 border border-gray-100 shadow-sm">
+                            {{ $customCategory->name }}
+                            <form action="{{ route('colocations.categories.destroy', ['colocation' => $colocation->id, 'category' => $customCategory->id]) }}" method="POST" class="inline" onsubmit="return confirm('Supprimer cette catégorie ?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-gray-300 hover:text-red-500 transition">✕</button>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- CONTENU Onglet Qui doit à qui --}}
     <div id="tab-debts" class="tab-content hidden">
-        <div class="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-6 flex items-center gap-3">
-            <span class="text-orange-400">⚡</span>
-            <p class="text-xs text-orange-600 font-medium">Les dettes sont calculées automatiquement pour minimiser le nombre de transactions.</p>
-        </div>
 
         <div class="space-y-3">
             @forelse($suggestedSettlements as $settlement)
@@ -252,12 +273,13 @@
                             {{ number_format($settlement['amount'], 2, ',', ' ') }} DH
                         </span>
                         
-                        @if($isUserDebtor)
+                        @if($isUserDebtor || Auth::id() === $colocation->owner_id)
                             <form action="{{ route('colocations.settlements.store', $colocation) }}" method="POST">
                                 @csrf
+                                <input type="hidden" name="debtor_id" value="{{ $settlement['debtor_id'] }}">
                                 <input type="hidden" name="creditor_id" value="{{ $settlement['creditor_id'] }}">
                                 <input type="hidden" name="amount" value="{{ $settlement['amount'] }}">
-                                <button type="submit" onclick="return confirm('Confirmer que vous avez remboursé {{ $settlement['amount'] }} DH à {{ $settlement['creditor']->name }} ?')" class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
+                                <button type="submit" onclick="return confirm('Confirmer que vous avez remboursé {{ $settlement['amount'] }} DH de {{ addslashes($settlement['debtor']->name) }} à {{ $settlement['creditor']->name }} a bien été effectué ?')" class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-green-100 transition">
                                     Marquer payé
                                 </button>
                             </form>
@@ -266,7 +288,6 @@
                 </div>
             @empty
                 <div class="text-center py-12 text-gray-400">
-                    <p class="text-4xl mb-2">🎉</p>
                     <p>Tout est équilibré ! Personne ne doit rien à personne.</p>
                 </div>
             @endforelse

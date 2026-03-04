@@ -21,7 +21,7 @@
         </div>
 
         <div class="bg-[#1B4332] p-6 rounded-2xl shadow-sm">
-            <p class="text-sm text-white/60 font-bold uppercase">Argent géré (Global)</p>
+            <p class="text-sm text-white/60 font-bold uppercase">TOTAL DEPENSES</p>
             <p class="text-3xl font-bold text-white mt-2">{{ number_format($stats['total_expenses'], 2, ',', ' ') }} DH</p>
         </div>
     </div>
